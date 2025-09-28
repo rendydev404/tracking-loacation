@@ -1,17 +1,21 @@
-
 import { NextResponse } from 'next/server';
-import fs from 'fs/promises';
-import path from 'path';
-
-const dbPath = path.join(process.cwd(), 'db.json');
+import { supabase } from '@/lib/supabaseClient';
 
 export async function GET() {
   try {
-    const fileData = await fs.readFile(dbPath, 'utf-8');
-    const db = JSON.parse(fileData);
-    return NextResponse.json(db.locations, { status: 200 });
+    // Ambil semua data dari tabel 'locations', urutkan dari yang terbaru
+    const { data: locations, error } = await supabase
+      .from('locations')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Supabase select error:', error);
+      throw error;
+    }
+
+    return NextResponse.json(locations, { status: 200 });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ message: 'Internal Server Error', error: error.message }, { status: 500 });
   }
 }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
-import Swal from 'sweetalert2'; // <-- IMPORT SWEETALERT
+import Swal from 'sweetalert2';
 
 const ADMIN_PASSWORD = 'gemini123';
 
@@ -65,7 +65,7 @@ export default function AdminDashboard() {
     try {
       const res = await fetch('/api/locations');
       const data = await res.json();
-      setLocations(data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)));
+      setLocations(data);
     } catch (error) {
       console.error("Gagal mengambil lokasi:", error);
     }
@@ -85,8 +85,7 @@ export default function AdminDashboard() {
     return { lat: -6.200000, lng: 106.816666 };
   }, [selectedLocation, locations]);
 
-  // --- FUNGSI HANDLEDELETE DIPERBARUI ---
-  const handleDelete = (recordId) => {
+  const handleDelete = (id) => {
     Swal.fire({
       title: 'Anda yakin?',
       text: "Data lokasi ini akan dihapus secara permanen!",
@@ -99,26 +98,18 @@ export default function AdminDashboard() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const res = await fetch(`/api/locations/${recordId}`, { method: 'DELETE' });
+          const res = await fetch(`/api/locations/${id}`, { method: 'DELETE' });
           if (res.ok) {
-            Swal.fire(
-              'Dihapus!',
-              'Data lokasi telah berhasil dihapus.',
-              'success'
-            );
+            Swal.fire('Dihapus!','Data lokasi telah berhasil dihapus.','success');
             fetchLocations();
-            if (selectedLocation && selectedLocation.recordId === recordId) {
+            if (selectedLocation && selectedLocation.id === id) {
               setSelectedLocation(null);
             }
           } else {
             throw new Error('Gagal menghapus dari server.');
           }
         } catch (error) {
-          Swal.fire(
-            'Gagal!',
-            'Terjadi kesalahan saat menghapus data.',
-            'error'
-          );
+          Swal.fire('Gagal!','Terjadi kesalahan saat menghapus data.','error');
         }
       }
     });
@@ -155,13 +146,13 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {locations.map((loc) => (
-                    <tr key={loc.recordId} className={selectedLocation?.recordId === loc.recordId ? 'bg-indigo-50' : ''}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-800">{loc.phoneNumber}</td>
+                    <tr key={loc.id} className={selectedLocation?.id === loc.id ? 'bg-indigo-50' : ''}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-800">{loc.phone_number}</td>
                       <td className="px-6 py-4 whitespace-normal text-sm text-gray-600">{loc.address}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(loc.timestamp).toLocaleString()}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(loc.created_at).toLocaleString()}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-4">
                         <button onClick={() => handleView(loc)} className="text-indigo-600 hover:text-indigo-900">Lihat</button>
-                        <button onClick={() => handleDelete(loc.recordId)} className="text-red-600 hover:text-red-900">Hapus</button>
+                        <button onClick={() => handleDelete(loc.id)} className="text-red-600 hover:text-red-900">Hapus</button>
                       </td>
                     </tr>
                   ))}
@@ -176,9 +167,9 @@ export default function AdminDashboard() {
               <GoogleMap mapContainerStyle={containerStyle} center={mapCenter} zoom={14}>
                 {locations.map((loc) => (
                   <Marker 
-                    key={loc.recordId} 
+                    key={loc.id} 
                     position={{ lat: loc.lat, lng: loc.lng }} 
-                    animation={selectedLocation?.recordId === loc.recordId ? window.google.maps.Animation.BOUNCE : null}
+                    animation={selectedLocation?.id === loc.id ? window.google.maps.Animation.BOUNCE : null}
                   />
                 ))}
               </GoogleMap>
